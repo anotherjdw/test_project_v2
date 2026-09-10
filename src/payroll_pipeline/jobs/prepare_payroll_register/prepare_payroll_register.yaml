@@ -1,0 +1,117 @@
+# Generated skeleton — fill in the values below.
+# Do NOT add or remove any fields. The generate layer validates this file
+# against a fixed schema; extra or missing fields will raise an error.
+#
+# To DELETE this job, delete its entire directory (src/<package>/jobs/<job>/),
+# not just this file. The tool derives the Terraform `jobs` map from the job
+# directories present, so a directory holding a rendered script with no spec
+# is an error, not a deletion.
+job:
+  name: prepare_payroll_register
+  description: Prepare the payroll register data by creating a unique key, deduplicate data, and assign retro pay to its original
+  glue:
+    worker_type: G.1X
+    number_of_workers: 2
+  sources:
+    - contract: payroll_register_raw
+      alias: payroll_register_raw
+      allow_empty: false  # set true to permit an empty windowed read for this source
+  sink:
+    layer: preprocessed
+    dataset: payroll_register
+    write_mode: overwrite        # append | overwrite (overwrite = dynamic partition overwrite)
+    partition_by: [pay_date]        # partition key(s); [] for an unpartitioned target
+    # window_column: <col>       # optional; the column read() windows on for downstream
+    # jobs sourcing from this sink. Omit if this dataset has no time dimension.
+    grain:
+      unique_key: [payroll_register_key]
+    contract:
+      version: "1.0.0"
+      owner: example_team
+      contact: example_team@example.com
+      description: <what this dataset is>
+      freshness:
+        cadence: daily
+        max_lateness: 24h
+      classification:
+        contains_pii: false
+    # --- Optional: write Parquet to S3 instead of the catalog (default is insertInto) ---
+    # Uncomment to write files directly to S3. Omit this block entirely to insertInto the catalog table.
+    # s3:
+    #   bucket_name: <bucket>
+    #   layer: <layer>
+    #   dataset: <dataset>
+    #   # Optional: register written partitions in the Glue Data Catalog.
+    #   # Omit if no table is built on top of this S3 data.
+    #   register_table:
+    #     database: <glue_database>
+    #     table: <table_name>
+  transformations:
+    - name: create_unique_key
+      description: >
+        create a payroll_register_key, which should be an md5 hashed key, concatenating the employee_id, pay_run_id, and lohnart_code, to be used to deduplicate the dataset.
+      inputs: [payroll_register_raw]
+      output:
+        grain_change: false
+        adds_columns:
+          - name: payroll_register_key
+            type: string
+    - name: cast_data_types
+      description: >
+        cast gl_account and lohnart_code as integers, cast pay_date as date
+      inputs: [create_unique_key]
+      depends_on: [create_unique_key]
+      output:
+        grain_change: false
+    - name: filter_retro_runs
+      description: >
+        Keep only rows where pay_run = 'retro'
+      inputs: [cast_data_types]
+      depends_on: [cast_data_types]
+      output:
+        grain_change: false
+    - name: sum_retro_amounts
+      description: >
+        Group the dataframe filtered for retro amounts on employee_id, pay_period, and lohnart_code, and take the sum of amount_eur.
+      inputs: [filter_retro_runs]
+      depends_on: [filter_retro_runs]
+      output:
+        grain_change: true
+        grain:
+          unique_key: [employee_id, pay_period, lohnart_code]
+        columns:
+          - name: employee_id
+            type: string
+          - name: pay_period
+            type: string
+          - name: lohnart_code
+            type: integer
+          - name: retro_amount
+            type: decimal(14,2)
+            unit: EUR
+    - name: filter_regular_runs
+      description: >
+        Take the deduplicated payroll register and filter where pay_run = 'regular'
+      inputs: [cast_data_types]
+      depends_on: [cast_data_types]
+      output:
+        grain_change: false
+    - name: join_regular_and_retro_data
+      description: >
+        Join the grouped retro pay dataframe to the filtered regular pay dataframe on employee_id, pay_period and lohnart_code.
+      inputs: [filter_regular_runs, sum_retro_amounts]
+      depends_on: [filter_regular_runs, sum_retro_amounts]
+      output:
+        grain_change: false
+        adds_columns:
+          - name: retro_amount
+            type: decimal(14, 2)
+            unit: EUR
+    - name: combine_regular_and_retro_pay
+      description: >
+        Replace the regular amount with regular plus retro pay, treating a missing retro total as zero.
+      inputs: [join_regular_and_retro_data]
+      depends_on: [join_regular_and_retro_data]
+      output:
+        grain_change: false
+        removes_columns: [retro_amount]

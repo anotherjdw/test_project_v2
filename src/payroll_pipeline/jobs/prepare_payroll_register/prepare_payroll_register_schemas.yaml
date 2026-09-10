@@ -1,0 +1,231 @@
+job: prepare_payroll_register
+spec_hash: sha256:c67dfed577902e01a8fa1d4ae0f50c6f1e6a776a7fe7607cb16f0ab287ca3380
+schemas:
+  payroll_register_raw:
+  - name: employee_id
+    type: string
+  - name: pay_run_id
+    type: string
+  - name: pay_period
+    type: string
+  - name: pay_date
+    type: string
+  - name: run_type
+    type: string
+  - name: lohnart_code
+    type: string
+  - name: component_name
+    type: string
+  - name: gl_account
+    type: string
+  - name: cost_center_code
+    type: string
+  - name: location_code
+    type: string
+  - name: bearer
+    type: string
+  - name: amount_eur
+    type: decimal(14,2)
+  - name: assessment_base_eur
+    type: decimal(14,2)
+  - name: quantity
+    type: decimal(12,4)
+  - name: rate
+    type: decimal(12,6)
+  create_unique_key_result:
+  - name: employee_id
+    type: string
+  - name: pay_run_id
+    type: string
+  - name: pay_period
+    type: string
+  - name: pay_date
+    type: string
+  - name: run_type
+    type: string
+  - name: lohnart_code
+    type: string
+  - name: component_name
+    type: string
+  - name: gl_account
+    type: string
+  - name: cost_center_code
+    type: string
+  - name: location_code
+    type: string
+  - name: bearer
+    type: string
+  - name: amount_eur
+    type: decimal(14,2)
+  - name: assessment_base_eur
+    type: decimal(14,2)
+  - name: quantity
+    type: decimal(12,4)
+  - name: rate
+    type: decimal(12,6)
+  cast_data_types_result:
+  - name: employee_id
+    type: string
+  - name: pay_run_id
+    type: string
+  - name: pay_period
+    type: string
+  - name: pay_date
+    type: string
+  - name: run_type
+    type: string
+  - name: lohnart_code
+    type: string
+  - name: component_name
+    type: string
+  - name: gl_account
+    type: string
+  - name: cost_center_code
+    type: string
+  - name: location_code
+    type: string
+  - name: bearer
+    type: string
+  - name: amount_eur
+    type: decimal(14,2)
+  - name: assessment_base_eur
+    type: decimal(14,2)
+  - name: quantity
+    type: decimal(12,4)
+  - name: rate
+    type: decimal(12,6)
+  filter_retro_runs_result:
+  - name: employee_id
+    type: string
+  - name: pay_run_id
+    type: string
+  - name: pay_period
+    type: string
+  - name: pay_date
+    type: string
+  - name: run_type
+    type: string
+  - name: lohnart_code
+    type: string
+  - name: component_name
+    type: string
+  - name: gl_account
+    type: string
+  - name: cost_center_code
+    type: string
+  - name: location_code
+    type: string
+  - name: bearer
+    type: string
+  - name: amount_eur
+    type: decimal(14,2)
+  - name: assessment_base_eur
+    type: decimal(14,2)
+  - name: quantity
+    type: decimal(12,4)
+  - name: rate
+    type: decimal(12,6)
+  filter_regular_runs_result:
+  - name: employee_id
+    type: string
+  - name: pay_run_id
+    type: string
+  - name: pay_period
+    type: string
+  - name: pay_date
+    type: string
+  - name: run_type
+    type: string
+  - name: lohnart_code
+    type: string
+  - name: component_name
+    type: string
+  - name: gl_account
+    type: string
+  - name: cost_center_code
+    type: string
+  - name: location_code
+    type: string
+  - name: bearer
+    type: string
+  - name: amount_eur
+    type: decimal(14,2)
+  - name: assessment_base_eur
+    type: decimal(14,2)
+  - name: quantity
+    type: decimal(12,4)
+  - name: rate
+    type: decimal(12,6)
+  sum_retro_amounts_result:
+  - name: employee_id
+    type: string
+  - name: pay_period
+    type: string
+  - name: lohnart_code
+    type: integer
+  - name: retro_amount
+    type: decimal(14,2)
+  join_regular_and_retro_data_result:
+  - name: employee_id
+    type: string
+  - name: pay_run_id
+    type: string
+  - name: pay_period
+    type: string
+  - name: pay_date
+    type: string
+  - name: run_type
+    type: string
+  - name: lohnart_code
+    type: string
+  - name: component_name
+    type: string
+  - name: gl_account
+    type: string
+  - name: cost_center_code
+    type: string
+  - name: location_code
+    type: string
+  - name: bearer
+    type: string
+  - name: amount_eur
+    type: decimal(14,2)
+  - name: assessment_base_eur
+    type: decimal(14,2)
+  - name: quantity
+    type: decimal(12,4)
+  - name: rate
+    type: decimal(12,6)
+  - name: retro_amount
+    type: decimal(14,2)
+  combine_regular_and_retro_pay_result:
+  - name: employee_id
+    type: string
+  - name: pay_run_id
+    type: string
+  - name: pay_period
+    type: string
+  - name: pay_date
+    type: string
+  - name: run_type
+    type: string
+  - name: lohnart_code
+    type: string
+  - name: component_name
+    type: string
+  - name: gl_account
+    type: string
+  - name: cost_center_code
+    type: string
+  - name: location_code
+    type: string
+  - name: bearer
+    type: string
+  - name: amount_eur
+    type: decimal(14,2)
+  - name: assessment_base_eur
+    type: decimal(14,2)
+  - name: quantity
+    type: decimal(12,4)
+  - name: rate
+    type: decimal(12,6)

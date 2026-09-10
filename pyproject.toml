@@ -1,0 +1,89 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "payroll_pipeline"
+description = "Data engineering pipeline for payroll_pipeline"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+dynamic = ["version"]
+dependencies = [
+    "pyspark==3.5.4",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "chispa>=0.10",
+]
+dev = [
+    "payroll_pipeline[test]",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "build>=1.0",
+]
+
+[tool.hatch.version]
+path = "src/payroll_pipeline/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+# Job settings YAML is generation-time input -- the tool reads it to emit code and it has
+# no place in a runtime artifact. Contract YAML is runtime input: it is read out of the
+# installed package via importlib.resources, so it must stay in the wheel. Same extension,
+# opposite lifecycles, which is why this is not a blanket `*.yaml`. The `**` is required --
+# job YAML lives at jobs/<job>/<job>.yaml, and a single `*` does not cross a directory
+# boundary.
+#
+# tests/ is dev-time-only code -- Glue runs the job scripts via --extra-py-files, never the
+# test suite, so shipping it only bloats the artifact uploaded to S3 on every deploy.
+exclude = [
+    "src/payroll_pipeline/jobs/**/*.yaml",
+    "src/payroll_pipeline/tests/**",
+]
+
+# --- Ruff -----------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# The transformation-module import header is scaffold-owned and fixed: it declares the whole
+# namespace a generated transformation function is allowed to reference, so names in it are
+# legitimately unused before `generate codegen` fills the bodies -- and after, for any job
+# whose transformations don't happen to need all of them.
+"**/*_transformations.py" = ["F401"]
+
+# --- mypy -----------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+
+# PySpark ships incomplete type stubs; silence import noise. yaml has no bundled stubs.
+[[tool.mypy.overrides]]
+module = ["pyspark.*", "delta.*", "chispa.*", "yaml"]
+ignore_missing_imports = true
+
+# --- pytest ---------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["src/payroll_pipeline/tests"]
+markers = [
+    "unit: one transformation against local Spark, with synthetic frames built from the resolved schema",
+    "integration: one pipeline function (read, write) against local Spark with a temp Iceberg warehouse",
+    "end_to_end: the whole pipeline read -> transform -> write, locally, in one process",
+]
+
+# --- coverage -------------------------------------------------------------
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = ["src/payroll_pipeline/tests/**"]

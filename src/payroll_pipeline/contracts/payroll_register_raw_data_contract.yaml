@@ -1,0 +1,93 @@
+# Owned data contract for the payroll_register source consumed by prepare_payroll_register.
+# Schema converted from the dbt payroll_register model.
+# Types marked TODO are inferred, not stated by dbt — confirm against the data.
+contract:
+  name: payroll_register_raw
+  version: "1.0.0"
+  owner: data-eng                        # TODO: team that owns the dbt model
+  contact: data-eng@example.com          # TODO
+  description: Transactional payroll register, one row per employee per pay component per pay run, with statutory calculations pre-computed in the ERP rather than derived downstream.
+  layer: raw
+  dataset: payroll_register
+  grain:
+    unique_key: [employee_id, pay_run_id, lohnart_code]
+  freshness:
+    cadence: monthly                     # TODO: confirm against the payroll run calendar
+    max_lateness: 2d
+  classification:
+    contains_pii: true
+  partition_column: pay_date
+  schema:
+    - name: employee_id
+      type: string
+      nullable: false
+      classification: pii
+      description: FK to employee_master.employee_id.
+    - name: pay_run_id
+      type: string
+      nullable: false
+      description: Identifier for the payroll run that produced this line.
+    - name: pay_period
+      type: string
+      nullable: false
+      description: Pay period this line applies to, expressed as year-month; on a retro line this is the original period, not the period of payment.
+    - name: pay_date
+      type: string
+      nullable: false
+      description: Date payment was issued, as an ISO-8601 string.
+    - name: run_type
+      type: string
+      nullable: false
+      description: Type of payroll run, such as regular, off-cycle or correction.
+      constraints:
+        enum_ref: payroll_run_type
+    - name: lohnart_code
+      type: string
+      nullable: false
+      description: FK to pay_component_reference.lohnart_code; wage type code.
+      constraints:
+        enum_ref: pay_component_reference.lohnart_code
+    - name: component_name
+      type: string
+      nullable: false
+      description: Human-readable pay component name.
+    - name: gl_account
+      type: string
+      nullable: false
+      description: GL account this line posts to.
+    - name: cost_center_code
+      type: string
+      nullable: false
+      description: Cost center as booked for this pay period, not the employee's current cost center; required for correct mid-period transfer attribution.
+    - name: location_code
+      type: string
+      nullable: false
+      description: FK to location_reference.location_code; location as of this pay period.
+      constraints:
+        enum_ref: location_reference.location_code
+    - name: bearer
+      type: string
+      nullable: false
+      description: Whether this component is borne by the employer or the employee.
+      constraints:
+        enum_ref: pay_component_bearer
+    - name: amount_eur
+      type: decimal(14,2)
+      nullable: false
+      unit: EUR
+      classification: sensitive
+      description: Monetary amount for this pay component line.
+    - name: assessment_base_eur
+      type: decimal(14,2)
+      nullable: true
+      unit: EUR
+      classification: sensitive
+      description: Base amount this component's contribution or tax was calculated against; null where not applicable to the component type.
+    - name: quantity
+      type: decimal(12,4)
+      nullable: true
+      description: Quantity basis for the component, such as hours; null for flat-amount components.
+    - name: rate
+      type: decimal(12,6)
+      nullable: true
+      description: Rate applied to quantity to derive amount_eur; null for flat-amount components.
